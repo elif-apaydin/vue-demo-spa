@@ -1,0 +1,25 @@
+image: atlassian/default-image:2
+pipelines:
+  branches:
+    master:
+    - step:
+        name: Build & Deploy to S3
+        deployment: production
+        image: node:14.18.1
+        script:
+#        - echo $NODE_ENV | base64 -d > .env
+        - npm install
+        - NODE_ENV=production npm run build -- --mode production
+        - pipe: atlassian/aws-s3-deploy:0.3.8
+          variables:
+            AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID
+            AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY
+            AWS_DEFAULT_REGION: 'REGION'
+            S3_BUCKET: 'BUCKET_NAME'
+            LOCAL_PATH: 'dist'
+        - pipe: atlassian/aws-cloudfront-invalidate:0.4.1
+          variables:
+            AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID
+            AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY
+            AWS_DEFAULT_REGION: 'REGION'
+            DISTRIBUTION_ID: 'DISTRIBUTION_ID'
